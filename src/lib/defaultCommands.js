@@ -239,6 +239,223 @@ define(function (require) {
 			tooltip: 'Font Color'
 		},
 		// END_COMMAND
+		// START_COMMAND: Glow
+		glow: {
+			_dropDown: function (editor, caller, callback) {
+				var	i, x, color, colors,
+					genColor     = {r: 255, g: 255, b: 255},
+					content      = $('<div />'),
+					colorColumns = editor.opts.colors ?
+						editor.opts.colors.split('|') : new Array(21),
+					// IE is slow at string concatenation so use an array
+					html         = [],
+					cmd          = defaultCommnds.glow;
+
+				if (!cmd._htmlCache) {
+					for (i = 0; i < colorColumns.length; ++i) {
+						colors = colorColumns[i] ?
+							colorColumns[i].split(',') : new Array(21);
+
+						html.push('<div class="sceditor-glow-column">');
+
+						for (x = 0; x < colors.length; ++x) {
+							// use pre defined colour if can otherwise use the
+							// generated color
+							color = colors[x] || '#' +
+								genColor.r.toString(16) +
+								genColor.g.toString(16) +
+								genColor.b.toString(16);
+
+							html.push(
+								'<a href="#" class="sceditor-glow-option"' +
+								' style="background-color: ' + color + '"' +
+								' data-glow="' + color + '"></a>'
+							);
+
+							if (x % 5 === 0) {
+								genColor.g -= 51;
+								genColor.b = 255;
+							} else {
+								genColor.b -= 51;
+							}
+						}
+
+						html.push('</div>');
+
+						if (i % 5 === 0) {
+							genColor.r -= 51;
+							genColor.g = 255;
+							genColor.b = 255;
+						} else {
+							genColor.g = 255;
+							genColor.b = 255;
+						}
+					}
+
+					cmd._htmlCache = html.join('');
+				}
+
+				content.append(cmd._htmlCache)
+					.find('a')
+					.click(function (e) {
+						callback($(this).attr('data-glow'));
+						editor.closeDropDown(true);
+						e.preventDefault();
+					});
+
+				editor.createDropDown(caller, 'glow-picker', content);
+			},
+			exec: function (caller) {
+				var editor = this;
+
+				defaultCommnds.glow._dropDown(
+					editor,
+					caller,
+					function (color) {
+						var	$current = $(editor.currentNode()),
+							$anchor  = $current.is('span') ? $current :
+							$current.parents('span').first();
+
+						if ($anchor.length) {
+							$anchor.css('text-shadow',
+								color + ' 0px 0px 7px, ' +
+								color + ' 0px 0px 7px, ' +
+								color +	' 0px 0px 7px');
+						} else {
+							editor.wysiwygEditorInsertHtml(
+								'<span class="glow" style="text-shadow: ' +
+								color + ' 0px 0px 7px, ' +
+								color + ' 0px 0px 7px, ' +
+								color + ' 0px 0px 7px">', '</span>');
+						}
+					}
+				);
+			},
+			tooltip: 'Glow Color'
+		},
+		// END_COMMAND
+		// START_COMMAND: Shadow
+		shadow: {
+			_dropDown: function (editor, caller, callback) {
+				var	i, x, color, colors,
+					genColor     = {r: 255, g: 255, b: 255},
+					content      = $('<div />'),
+					colorColumns = editor.opts.colors ?
+						editor.opts.colors.split('|') : new Array(21),
+					// IE is slow at string concatenation so use an array
+					html         = [],
+					cmd          = defaultCommnds.shadow;
+
+				if (!cmd._htmlCache) {
+					html.push('<div><label for="position">Position</label>' +
+						'</div><div class="sceditor-shadow-pos">');
+					html.push('<input type="radio" name="position"' +
+						' value="-3px 0px" id="-3px 0px"' +
+						' style="display:none" checked/>' +
+						'<label for="-3px 0px" class="fa posleft"></label>');
+					html.push('<input type="radio" name="position"' +
+						' value="3px 0px" id="3px 0px" style="display:none"/>' +
+						'<label for="3px 0px" class="fa posright"></label>');
+					html.push('<input type="radio" name="position" value="' +
+						'0px -3px" id="0px -3px" style="display:none"/>' +
+						'<label for="0px -3px" class="fa posup"></label>');
+					html.push('<input type="radio" name="position"' +
+						' value="0px 3px" id="0px 3px" style="display:none"/>' +
+						'<label for="0px 3px" class="fa posdown"></label>');
+					html.push('</div><div class="clear">' +
+						'<label for="Color">Color</label></div>');
+					for (i = 0; i < colorColumns.length; ++i) {
+						colors = colorColumns[i] ?
+							colorColumns[i].split(',') : new Array(21);
+
+						html.push('<div class="sceditor-shadow-column">');
+
+						for (x = 0; x < colors.length; ++x) {
+							// use pre defined colour if can otherwise use the
+							// generated color
+							color = colors[x] || '#' +
+								genColor.r.toString(16) +
+								genColor.g.toString(16) +
+								genColor.b.toString(16);
+
+							html.push('<input type="radio" name="color"' +
+							' value="' + color + '" id="' + color + '" ' +
+							'style="display:none"/><label for="' + color +
+							'" style="background-color: ' + color +
+							';"></label>');
+
+							if (x % 5 === 0) {
+								genColor.g -= 51;
+								genColor.b = 255;
+							} else {
+								genColor.b -= 51;
+							}
+						}
+
+						html.push('</div>');
+
+						if (i % 5 === 0) {
+							genColor.r -= 51;
+							genColor.g = 255;
+							genColor.b = 255;
+						} else {
+							genColor.g = 255;
+							genColor.b = 255;
+						}
+					}
+					html.push('<div class="clear"><input type="button" ' +
+						'class="button" value="Insert"></div>');
+					cmd._htmlCache = html.join('');
+				}
+
+				content.append(cmd._htmlCache)
+					.find('.button')
+					.click(function (e) {
+						callback($('input[name=color]:checked').val() + ','
+						+ $('input[name=position]:checked').val());
+						editor.closeDropDown(true);
+						e.preventDefault();
+					});
+
+				editor.createDropDown(caller, 'shadow-picker', content);
+			},
+			exec: function (caller) {
+				var editor = this;
+
+				defaultCommnds.shadow._dropDown(
+					editor,
+					caller,
+					function (color) {
+						var	$current = $(editor.currentNode()),
+							$anchor  = $current.is('span') ? $current :
+							$current.parents('span').first();
+
+						var color = color.split(',');
+
+						if ($anchor.length) {
+							$anchor.css('text-shadow', color[0] +
+							' ' + color[1] + ' 1px');
+						} else {
+							editor.wysiwygEditorInsertHtml(
+								'<span class="shadow" style="text-shadow: '
+								+ color[0] + ' ' + color[1] +
+								' 1px">', '</span>');
+						}
+					}
+				);
+			},
+			tooltip: 'Text Shadow'
+		},
+		// END_COMMAND
+		// START_COMMAND: Move
+		move: {
+			forceNewLineAfter: ['move'],
+			exec: function () {
+				this.wysiwygEditorInsertHtml('[move]', '[/move]');
+			},
+			tooltip: 'Move'
+		},
+		// END_COMMAND
 		// START_COMMAND: Remove Format
 		removeformat: {
 			exec: 'removeformat',
