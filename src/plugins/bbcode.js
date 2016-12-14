@@ -112,30 +112,88 @@
 				);
 			}
 		},
+		glow: {
+			txtExec: function (caller) {
+				var editor = this;
+				getEditorCommand('glow')._dropDown(
+					editor,
+					caller,
+					function (color) {
+						editor.insertText(
+							'[glow=' + color + ']',
+							'[/glow]'
+						);
+					}
+				);
+			}
+		},
+		shadow: {
+			txtExec: function (caller) {
+				var editor = this;
+				getEditorCommand('glow')._dropDown(
+					editor,
+					caller,
+					function (color) {
+						var color = color.split(',');
+						if (color[1].substr(color[1].length - 3) !== '0px') {
+							if (color[1].substr(color[1].length - 4)
+								=== '-3px') {
+								color = color[0] + ',top';
+							} else {
+								color = color[0] + ',bottom';
+							}
+						} else {
+							if (color[1].substr(color[1].length - 8)
+								=== '-3px 0px') {
+								color = color[0] + ',left';
+							} else {
+								color = color[0] + ',right';
+							}
+						}
+						editor.insertText(
+							'[shadow=' + color + ']',
+							'[/shadow]'
+						);
+					}
+				);
+			}
+		},
+		move: {
+			txtExec: ['[move]', '[/move]']
+		},
 		bulletlist: {
 			txtExec: function (caller, selected) {
-				var content = '';
+				if (selected) {
+					var content = '';
 
-				$.each(selected.split(/\r?\n/), function () {
-					content += (content ? '\n' : '') +
-						'[li]' + this + '[/li]';
-				});
+					$.each(selected.split(/\r?\n/), function () {
+						content += (content ? '\n' : '') +
+							'[li]' + this + '[/li]';
+					});
 
-				this.insertText('[ul]\n' + content + '\n[/ul]');
+					this.insertText('[list]\n' + content + '\n[/list]');
+				} else {
+					this.insertText('[list]\n[li]',
+						'[/li]\n[li][/li]\n[/list]');
+				}
 			}
 		},
 		orderedlist: {
 			txtExec: function (caller, selected) {
-				var content = '';
+				if (selected) {
+					var content = '';
 
-				$.each(selected.split(/\r?\n/), function () {
-					content += (content ? '\n' : '') +
+					$.each(selected.split(/\r?\n/), function () {
+						content += (content ? '\n' : '') +
 						'[li]' + this + '[/li]';
-				});
+					});
 
-				sceditorPlugins.bbcode.bbcode.get('');
-
-				this.insertText('[ol]\n' + content + '\n[/ol]');
+					this.insertText('[list type=decimal]\n' +
+						content + '\n[/list]');
+				} else {
+					this.insertText('[list type=decimal]\n[li]',
+						'[/li]\n[li][/li]\n[/list]');
+				}
 			}
 		},
 		table: {
@@ -2295,6 +2353,82 @@
 		},
 		// END_COMMAND
 
+		// START_COMMAND: Glow
+		glow: {
+			tags: {
+				span: {
+					class: ['glow']
+				}
+			},
+			quoteType: BBCodeParser.QuoteType.never,
+			format: function ($element, content) {
+				var style = $element.attr('style');
+				var color = style.substr(13, style.indexOf(' 0px') - 13);
+
+				if (style.substr(style.length - 3) !== '1px') {
+					return '[glow=' + _normaliseColour(color) + ']' +
+						content + '[/glow]';
+				}
+			},
+			html: function (token, attrs, content) {
+				return '<span class="glow" style="text-shadow: ' +
+					escapeEntities(_normaliseColour(attrs.defaultattr), true)
+					+ ' 0px 0px 7px, ' +
+					escapeEntities(_normaliseColour(attrs.defaultattr), true)
+					+ ' 0px 0px 7px, ' +
+					escapeEntities(_normaliseColour(attrs.defaultattr), true)
+					+ ' 0px 0px 7px">' + content + '</span>';
+			}
+		},
+		// END_COMMAND
+
+		// STAR_COMMAND: Shadow
+		shadow: {
+			tags: {
+				span: {
+					class: ['shadow']
+				}
+			},
+			quoteType: BBCodeParser.QuoteType.never,
+			format: function ($element, content) {
+				var style = $element.attr('style');
+				var getpos = style.split(' ');
+				var resultpos;
+
+				if (getpos[2] === '-3px') {
+					resultpos = ',left';
+				} else if (getpos[2] === '3px') {
+					resultpos = ',right';
+				} else if (getpos[3] === '3px') {
+					resultpos = ',bottom';
+				} else if (getpos[3] === '-3px') {
+					resultpos = ',top';
+				}
+
+				if (style.substr(style.length - 3) === '1px') {
+					return '[shadow=' + _normaliseColour(getpos[1])
+						+ resultpos + ']' + content + '[/shadow]';
+				}
+			},
+			html: function (token, attrs, content) {
+				var style = attrs.defaultattr;
+				var pos = style.split(',');
+				if (pos[1] === 'left') {
+					pos[1] = '-3px 0px';
+				} else if (pos[1] === 'right') {
+					pos[1] = '3px 0px';
+				} else if (pos[1] === 'top') {
+					pos[1] = '0px -3px';
+				} else if (pos[1] === 'bottom') {
+					pos[1] = '0px 3px';
+				}
+				return '<span class="shadow" style="text-shadow: ' +
+					pos[0] + ' ' + pos[1] + ' 1px">' +
+					content + '</span>';
+			}
+		},
+		// END COMMAND
+
 		// START_COMMAND: Lists
 		ul: {
 			tags: {
@@ -2302,15 +2436,30 @@
 			},
 			breakStart: true,
 			isInline: false,
-			skipLastLineBreak: true,
-			format: '[ul]{0}[/ul]',
-			html: '<ul>{0}</ul>'
+			html: '<ul>{0}</ul>',
+			format: function ($element, content) {
+				if ($($element[0]).css('list-style-type') === 'disc') {
+					return '[list]' + content + '[/list]';
+				} else {
+					return '[list type=' + $($element[0]).css('list-style-type')
+						+ ']' + content + '[/list]';
+				}
+			}
 		},
 		list: {
 			breakStart: true,
 			isInline: false,
-			skipLastLineBreak: true,
-			html: '<ul>{0}</ul>'
+			allowedChildren: ['*', 'li'],
+			html: function (token, attrs, content) {
+				var style = '';
+				var code = 'ul';
+
+				if (attrs.type) {
+					style = ' style="list-style-type: ' + attrs.type + '"';
+				}
+
+				return '<' + code + style + '>' + content + '</' + code + '>';
+			}
 		},
 		ol: {
 			tags: {
@@ -2318,8 +2467,7 @@
 			},
 			breakStart: true,
 			isInline: false,
-			skipLastLineBreak: true,
-			format: '[ol]{0}[/ol]',
+			format: '[list type=decimal]{0}[/list]',
 			html: '<ol>{0}</ol>'
 		},
 		li: {
