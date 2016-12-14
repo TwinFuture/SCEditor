@@ -20,7 +20,8 @@ define(function (require) {
 			'left,center,right,justify|font,size,color,removeformat|' +
 			'cut,copy,paste,pastetext|bulletlist,orderedlist,indent,outdent|' +
 			'table|code,quote|horizontalrule,image,email,link,unlink|' +
-			'emoticon,youtube,date,time|ltr,rtl|print,maximize,source',
+			'emoticon,youtube,date,time|ltr,rtl|print,maximize,source' +
+			'glow,shadow,move',
 
 		/**
 		 * Comma separated list of commands to excludes from the toolbar
