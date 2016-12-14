@@ -276,7 +276,7 @@ define([
 				'<div>' + IE_BR_STR + '</div>' +
 				'<ul><li>text</li></ul>'
 			),
-			'text\n\n[ul]\n[li]text[/li]\n[/ul]\n',
+			'text\n\n[list]\n[li]text[/li]\n[/list]\n',
 			'Div siblings with a list'
 		);
 
@@ -287,7 +287,7 @@ define([
 				'<div>' + IE_BR_STR + '</div>' +
 				'<ul><li>text</li></ul>'
 			),
-			'text\n\n\n[ul]\n[li]text[/li]\n[/ul]\n',
+			'text\n\n\n[list]\n[li]text[/li]\n[/list]\n',
 			'Multiple div siblings with a list'
 		);
 
@@ -307,7 +307,7 @@ define([
 			this.htmlToBBCode(
 				'<ul><li>newline<br />' + IE_BR_STR + '</li></ul>'
 			),
-			'[ul]\n[li]newline\n[/li]\n[/ul]\n',
+			'[list]\n[li]newline\n[/li]\n[/list]\n',
 			'List item last child block level'
 		);
 
@@ -590,13 +590,13 @@ define([
 	test('List', function (assert) {
 		assert.equal(
 			this.htmlToBBCode('<ul><li>test' + IE_BR_STR + '</li></ul>'),
-			'[ul]\n[li]test[/li]\n[/ul]\n',
+			'[list]\n[li]test[/li]\n[/list]\n',
 			'UL tag'
 		);
 
 		assert.equal(
 			this.htmlToBBCode('<ol><li>test' + IE_BR_STR + '</li></ol>'),
-			'[ol]\n[li]test[/li]\n[/ol]\n',
+			'[list type=decimal]\n[li]test[/li]\n[/list]\n',
 			'OL tag'
 		);
 
@@ -610,7 +610,7 @@ define([
 					'</li>' +
 				'</ul>'
 			),
-			'[ul]\n[li]test\n[ul]\n[li]sub[/li]\n[/ul]\n[/li]\n[/ul]\n',
+			'[list]\n[li]test\n[list type=circle]\n[li]sub[/li]\n[/list]\n[/li]\n[/list]\n',
 			'Nested UL tag'
 		);
 	});
