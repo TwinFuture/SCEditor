@@ -30,7 +30,8 @@ define(function (require) {
 
 		toolbarButton: '<a class="sceditor-button sceditor-button-{name}" ' +
 			'data-sceditor-command="{name}" unselectable="on">' +
-			'<div unselectable="on">{dispName}</div></a>',
+			'<div unselectable="on">{dispName}</div>' +
+			'<i class="fa fa-{name}"></i></a>',
 
 		emoticon: '<img src="{url}" data-sceditor-emoticon="{key}" ' +
 			'alt="{key}" title="{tooltip}" />',
