@@ -283,6 +283,7 @@
 			handleMouseDown,
 			handleEvent,
 			handleDocumentClick,
+			handleWindowResize,
 			updateToolBar,
 			updateActiveButtons,
 			sourceEditorSelectedText,
@@ -353,7 +354,7 @@
 			initPlugins();
 			initEmoticons();
 			initToolBar();
-			initEditor();
+			initEditor(!!options.startInSourceMode);
 			initCommands();
 			initOptions();
 			initEvents();
@@ -376,6 +377,10 @@
 				if (options.autoExpand) {
 					base.expandToContent();
 				}
+
+				// Page width might have changed after CSS is loaded so
+				// call handleWindowResize to update any % based dimensions
+				handleWindowResize();
 
 				pluginManager.call('ready');
 			};
@@ -419,9 +424,11 @@
 
 		/**
 		 * Creates the editor iframe and textarea
+		 * @param {boolean} startInSourceMode Force loading the editor in this
+		 *																	mode
 		 * @private
 		 */
-		initEditor = function () {
+		initEditor = function (startInSourceMode) {
 			var doc, tabIndex;
 
 			$sourceEditor  = $('<textarea></textarea>');
@@ -433,7 +440,7 @@
 			 * for any reason, the user may not want the value to be tinkered
 			 * by any filters.
 			 */
-			if (options.startInSourceMode) {
+			if (startInSourceMode) {
 				$editorContainer.addClass('sourceMode');
 				$wysiwygEditor.hide();
 			} else {
@@ -455,7 +462,6 @@
 			wysiwygEditor = $wysiwygEditor[0];
 			sourceEditor  = $sourceEditor[0];
 
-// TODO: make this optional somehow
 			base.dimensions(
 				options.width || $original.width(),
 				options.height || $original.height()
@@ -544,6 +550,8 @@
 			$(original.form)
 				.on('reset', handleFormReset)
 				.submit(base.updateOriginal);
+
+			$globalWin.on('resize orientationChanged', handleWindowResize);
 
 			$wysiwygBody
 				.keypress(handleKeyPress)
@@ -752,6 +760,12 @@
 
 				if (newWidth || newHeight) {
 					base.dimensions(newWidth, newHeight);
+
+					// The resize cover will not fill the container
+					// in IE6 unless a height is specified.
+					if (IE_VER < 7) {
+						$editorContainer.height(newHeight);
+					}
 				}
 
 				e.preventDefault();
@@ -765,7 +779,7 @@
 				isDragging = false;
 
 				$cover.hide();
-				$editorContainer.removeClass('resizing');
+				$editorContainer.removeClass('resizing').height('auto');
 				$globalDoc.off(moveEvents, mouseMoveFunc);
 				$globalDoc.off(endEvents, mouseUpFunc);
 
@@ -794,6 +808,12 @@
 				$cover.show();
 				$globalDoc.on(moveEvents, mouseMoveFunc);
 				$globalDoc.on(endEvents, mouseUpFunc);
+
+				// The resize cover will not fill the container in
+				// IE6 unless a height is specified.
+				if (IE_VER < 7) {
+					$editorContainer.height(startHeight);
+				}
 
 				e.preventDefault();
 			});
@@ -1089,6 +1109,12 @@
 		 * @return {this}
 		 */
 		base.dimensions = function (width, height, save) {
+			// IE6 & IE7 add 2 pixels to the source mode textarea
+			// height which must be ignored.
+			// Doesn't seem to be any way to fix it with only CSS
+			var ieBorder = IE_VER < 8 || globalDoc.documentMode < 8 ? 2 : 0;
+			var undef;
+
 			// set undefined width/height to boolean false
 			width  = (!width && width !== 0) ? false : width;
 			height = (!height && height !== 0) ? false : height;
@@ -1097,12 +1123,41 @@
 				return { width: base.width(), height: base.height() };
 			}
 
+			if ($wysiwygEditor.data('outerWidthOffset') === undef) {
+				base.updateStyleCache();
+			}
+
 			if (width !== false) {
 				if (save !== false) {
 					options.width = width;
 				}
+// This is the problem
+				if (height === false) {
+					height = $editorContainer.height();
+					save   = false;
+				}
 
 				$editorContainer.width(width);
+				if (width && width.toString().indexOf('%') > -1) {
+					width = $editorContainer.width();
+				}
+
+				$wysiwygEditor.width(
+					width - $wysiwygEditor.data('outerWidthOffset')
+				);
+
+				$sourceEditor.width(
+					width - $sourceEditor.data('outerWidthOffset')
+				);
+
+				// Fix overflow issue with iOS not
+				// breaking words unless a width is set
+				if (browser.ios && $wysiwygBody) {
+					$wysiwygBody.width(
+						width - $wysiwygEditor.data('outerWidthOffset') -
+						($wysiwygBody.outerWidth(true) - $wysiwygBody.width())
+					);
+				}
 			}
 
 			if (height !== false) {
@@ -1110,7 +1165,22 @@
 					options.height = height;
 				}
 
-				$editorContainer.height(height);
+				// Convert % based heights to px
+				if (height && height.toString().indexOf('%') > -1) {
+					height = $editorContainer.height(height).height();
+					$editorContainer.height('auto');
+				}
+
+				height -= !options.toolbarContainer ?
+					$toolbar.outerHeight(true) : 0;
+
+				$wysiwygEditor.height(
+					height - $wysiwygEditor.data('outerHeightOffset')
+				);
+
+				$sourceEditor.height(
+					height - ieBorder - $sourceEditor.data('outerHeightOffset')
+				);
 			}
 
 			return base;
@@ -1120,15 +1190,33 @@
 		 * Updates the CSS styles cache.
 		 *
 		 * This shouldn't be needed unless changing the editors theme.
-		 *
+		 *F
 		 * @since 1.4.1
 		 * @function
 		 * @memberOf jQuery.sceditor.prototype
 		 * @name updateStyleCache
 		 * @return {int}
-		 * @deprecated
 		 */
-		base.updateStyleCache = function () {};
+		base.updateStyleCache = function () {
+			// caching these improves FF resize performance
+			$wysiwygEditor.data(
+				'outerWidthOffset',
+				$wysiwygEditor.outerWidth(true) - $wysiwygEditor.width()
+			);
+			$sourceEditor.data(
+				'outerWidthOffset',
+				$sourceEditor.outerWidth(true) - $sourceEditor.width()
+			);
+
+			$wysiwygEditor.data(
+				'outerHeightOffset',
+				$wysiwygEditor.outerHeight(true) - $wysiwygEditor.height()
+			);
+			$sourceEditor.data(
+				'outerHeightOffset',
+				$sourceEditor.outerHeight(true) - $sourceEditor.height()
+			);
+		};
 
 		/**
 		 * Gets the height of the editor in px
@@ -1275,6 +1363,7 @@
 			}
 
 			$globalDoc.off('click', handleDocumentClick);
+			$globalWin.off('resize orientationChanged', handleWindowResize);
 
 			$(original.form)
 				.off('reset', handleFormReset)
@@ -2570,6 +2659,25 @@
 		handleMouseDown = function () {
 			base.closeDropDown();
 			lastRange = null;
+		};
+
+		/**
+		 * Handles the window resize event. Needed to resize then editor
+		 * when the window size changes in fluid designs.
+		 * @ignore
+		 */
+		handleWindowResize = function () {
+			var	height = options.height,
+				width  = options.width;
+
+			if (!base.maximize()) {
+				if ((height && height.toString().indexOf('%') > -1) ||
+					(width && width.toString().indexOf('%') > -1)) {
+					base.dimensions(width, height);
+				}
+			} else {
+				base.dimensions('100%', '100%', false);
+			}
 		};
 
 		/**
