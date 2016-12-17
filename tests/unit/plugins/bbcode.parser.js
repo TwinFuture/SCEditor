@@ -173,18 +173,6 @@ define([
 		);
 	});
 
-	test('Do not strip start and end spaces', function (assert) {
-		assert.equal(
-			this.parser.toHTML('\n\n[quote]test[/quote]\n\n\n\n'),
-			'<div>' + IE_BR_STR + '</div>\n' +
-			'<div>' + IE_BR_STR + '</div>\n' +
-			'<blockquote>test' + IE_BR_STR + '</blockquote>' +
-			'<div>' + IE_BR_STR + '</div>\n' +
-			'<div>' + IE_BR_STR + '</div>\n' +
-			'<div><br />' + IE_BR_STR + '</div>\n'
-		);
-	});
-
 
 	test('New Line Handling', function (assert) {
 		assert.htmlEqual(
@@ -202,22 +190,6 @@ define([
 			this.parser.toHTML('[code]test\nline\n[/code]'),
 			'<code>test<br />line<br />' + IE_BR_STR + '</code>',
 			'Code test'
-		);
-
-		assert.htmlEqual(
-			this.parser.toHTML('[quote]test\nline\n[/quote]'),
-			'<blockquote>test<br />line<br />' + IE_BR_STR + '</blockquote>',
-			'Quote test'
-		);
-
-		assert.htmlEqual(
-			this.parser.toHTML('[quote][center]test[/center][/quote]'),
-
-			'<blockquote>' +
-				'<div align="center">test' + IE_BR_STR + '</div>' +
-			'</blockquote>',
-
-			'Two block-level elements together'
 		);
 	});
 
@@ -726,22 +698,6 @@ define([
 	});
 
 
-	test('Quote', function (assert) {
-		assert.htmlEqual(
-			this.parser.toHTML('[quote]Testing 1.2.3....[/quote]'),
-			'<blockquote>Testing 1.2.3....' + IE_BR_STR + '</blockquote>',
-			'Normal'
-		);
-
-		assert.htmlEqual(
-			this.parser.toHTML('[quote=admin]Testing 1.2.3....[/quote]'),
-			'<blockquote><cite>admin</cite>Testing 1.2.3....' + IE_BR_STR +
-				'</blockquote>',
-			'With author'
-		);
-	});
-
-
 	test('Code', function (assert) {
 		assert.htmlEqual(
 			this.parser.toHTML('[code]Testing 1.2.3....[/code]'),
@@ -1004,13 +960,6 @@ define([
 		assert.equal(
 			this.parser.toHTML('<script>alert("Hello");</script>'),
 			'<div>&lt;script&gt;alert(&#34;Hello&#34;);&lt;/script&gt;</div>\n',
-			'Inject HTML script'
-		);
-
-		assert.equal(
-			this.parser.toHTML('[quote=test<b>test</b>test]test[/quote]'),
-			'<blockquote><cite>test&lt;b&gt;test&lt;/b&gt;test</cite>' +
-				'test' + IE_BR_STR + '</blockquote>',
 			'Inject HTML script'
 		);
 	});

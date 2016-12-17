@@ -2664,36 +2664,88 @@
 		// START_COMMAND: Quote
 		quote: {
 			tags: {
-				blockquote: null
+				blockquote: null,
+				cite: null
 			},
-			isInline: false,
 			quoteType: BBCodeParser.QuoteType.never,
-			format: function (element, content) {
-				var	author = '';
-				var $elm  = $(element);
-				var $cite = $elm.children('cite').first();
+			breakBefore: false,
+			isInline: false,
+			format: function ($element, content) {
+				var author = '';
+				var date = '';
+				var link = '';
 
-				if ($cite.length === 1 || $elm.data('author')) {
-					author = $cite.text() || $elm.data('author');
-
-					$elm.data('author', author);
-					$cite.remove();
-
-					content	= this.elementToBbcode($(element));
-					author  = '=' + author.replace(/(^\s+|\s+$)/g, '');
-
-					$elm.prepend($cite);
+				// The <cite> contains only the graphic for the quote
+				// so we can skip it
+				if ($element[0].tagName.toLowerCase() === 'cite') {
+					return '';
 				}
-
-				return '[quote' + author + ']' + content + '[/quote]';
+				if ($element.attr('author')) {
+					author = ' author=' +
+						$element.attr('author').php_unhtmlspecialchars();
+				}
+				if ($element.attr('date')) {
+					date = ' date=' + $element.attr('date');
+				}
+				if ($element.attr('link')) {
+					link = ' link=' + $element.attr('link');
+				}
+				return '[quote' + author + date + link + ']' +
+					content + '[/quote]';
 			},
 			html: function (token, attrs, content) {
-				if (attrs.defaultattr) {
-					content = '<cite>' + escapeEntities(attrs.defaultattr) +
-						'</cite>' + content;
+				var attrAuthor = '',
+					author = '',
+					attrDate = '',
+					date = '',
+					attrLink = '',
+					link = '';
+
+				if (typeof attrs.author !== 'undefined' && attrs.author) {
+					attrAuthor = attrs.author;
+					// eslint-disable-next-line no-undef, camelcase
+					author = bbc_quote_from + ': ' + attrAuthor;
 				}
 
-				return '<blockquote>' + content + '</blockquote>';
+				// Links could be in the form: link=topic=71.msg201#msg201
+				// that would fool javascript, so we need a workaround
+				// Probably no more necessary
+				for (var key in attrs) {
+					if (key.substr(0, 4) === 'link' &&
+					attrs.hasOwnProperty(key)) {
+						attrLink = key.length > 4 ?
+							key.substr(5) + '=' + attrs[key] : attrs[key];
+
+						link = attrLink.substr(0, 7) === 'http://' ?
+							// eslint-disable-next-line no-undef, camelcase
+							attrLink : smf_scripturl + '?' + attrLink;
+						author = author === '' ? '<a href="' + link + '">' +
+							// eslint-disable-next-line no-undef, camelcase
+							bbc_quote_from + ': ' + link + '</a>' :
+							'<a href="' + link + '">' + author + '</a>';
+					}
+				}
+
+				if (typeof attrs.date !== 'undefined' && attrs.date) {
+					attrDate = attrs.date;
+					date = '<date timestamp="' + attrDate + '">' +
+						new Date(attrs.date * 1000) + '</date>';
+				}
+
+				if (author === '' && date === '') {
+					// eslint-disable-next-line no-undef, camelcase
+					author = bbc_quote;
+				} else if (author === '' && date !== '') {
+					// eslint-disable-next-line no-undef, camelcase
+					author += ' ' + bbc_search_on;
+				}
+
+				content = '<blockquote author="' + attrAuthor +
+					'" date="' + attrDate + '" link="' + attrLink +
+					'"><cite>' + author + ' ' + date + '</cite>' +
+					content + '</blockquote>';
+
+				return content;
 			}
 		},
 		// END_COMMAND

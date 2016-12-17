@@ -906,7 +906,6 @@ define(function (require) {
 		},
 		// END_COMMAND
 
-
 		// START_COMMAND: Quote
 		quote: {
 			forceNewLineAfter: ['blockquote'],

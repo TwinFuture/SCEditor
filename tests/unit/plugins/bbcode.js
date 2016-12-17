@@ -78,14 +78,6 @@ define([
 
 		assert.htmlEqual(
 			this.plugin.signalToWysiwyg(
-				'\n\n[quote]test[/quote]\n\n'
-			),
-			'<blockquote>test' + IE_BR_STR + '</blockquote>',
-			'Block level'
-		);
-
-		assert.htmlEqual(
-			this.plugin.signalToWysiwyg(
 				'\n\n[b]test[/b]\n\n'
 			),
 			'<div><strong>test</strong></div>\n',
@@ -107,14 +99,6 @@ define([
 
 			return this.plugin.signalToSource('', $html);
 		};
-
-
-		assert.equal(
-			this.htmlToBBCode('<div><br /><br /></div>' +
-				'<blockquote>test</blockquote><div><br /><br /></div>'),
-			'[quote]test[/quote]',
-			'Block level'
-		);
 
 		assert.equal(
 			this.htmlToBBCode('<div><br /><br /><strong>test</strong>' +
@@ -748,48 +732,6 @@ define([
 			this.htmlToBBCode('<a href="mailto:test@test.com"></a>'),
 			'',
 			'Empty e-mail tag'
-		);
-	});
-
-
-	test('Quote', function (assert) {
-		assert.equal(
-			this.htmlToBBCode('<blockquote>Testing 1.2.3....</blockquote>'),
-			'[quote]Testing 1.2.3....[/quote]\n',
-			'Simple quote'
-		);
-
-		assert.equal(
-			this.htmlToBBCode(
-				'<blockquote><cite>admin</cite>Testing 1.2.3....</blockquote>'
-			),
-			'[quote=admin]Testing 1.2.3....[/quote]\n',
-			'Quote with cite (author)'
-		);
-
-		assert.equal(
-			this.htmlToBBCode(
-				'<blockquote>' +
-					'<cite>admin</cite>Testing 1.2.3....' +
-					'<blockquote>' +
-						'<cite>admin</cite>Testing 1.2.3....' +
-					'</blockquote>' +
-				'</blockquote>'
-			),
-			'[quote=admin]Testing 1.2.3....\n[quote=admin]Testing 1.2.3....' +
-				'[/quote]\n[/quote]\n',
-			'Nested quote with cite (author)'
-		);
-
-		assert.equal(
-			this.htmlToBBCode(
-				'<blockquote>' +
-					'<cite>admin</cite>' +
-					'<cite>this should be ignored</cite> Testing 1.2.3....' +
-				'</blockquote>'
-			),
-			'[quote=admin]this should be ignored Testing 1.2.3....[/quote]\n',
-			'Quote with 2 cites (author)'
 		);
 	});
 
